@@ -1,8 +1,6 @@
 #ifndef RAWEENAAMIR_HEADERFILE_H
 #define RAWEENAAMIR_HEADERFILE_H
 
-
-
 #include <string>
 using namespace std;
 
@@ -12,14 +10,7 @@ struct Timestamp {
     int hour, minute, second;
 };
 
-inline bool isNewer(const Timestamp& a, const Timestamp& b) {
-    if (a.year != b.year) return a.year > b.year;
-    if (a.month != b.month) return a.month > b.month;
-    if (a.day != b.day) return a.day > b.day;
-    if (a.hour != b.hour) return a.hour > b.hour;
-    if (a.minute != b.minute) return a.minute > b.minute;
-    return a.second > b.second;
-}
+bool isNewer(const Timestamp& a, const Timestamp& b);
 
 // ---------------- Comment (Singly Linked List) ----------------
 struct Comment {

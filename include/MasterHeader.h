@@ -1,10 +1,14 @@
 #ifndef SOCIALMEDIA_H
 #define SOCIALMEDIA_H
 
-// Declare the functions so other files know they exist
+// Existing menu functions
 void userMenu();
 void notificationMenu();
 void historyMenu();
 
+// NEW menu functions
+void postMenu();
+void interactionMenu();
+void feedMenu();
 
 #endif
