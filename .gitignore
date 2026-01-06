@@ -1,15 +1,26 @@
-# Compiled binaries
-*.exe
-*.out
-SocialMediaApp
-SocialMedia
+# Compiled executable
+my_program.exe
 
-# Object files
+# IDE / editor cache
+.ccls-cache
+
+# Replit-specific files
+.replit
+replit.md
+attached_assets/
+
+# OS / system files (Windows)
+Thumbs.db
+*.log
+
+# Build artifacts or temp files (if any)
 *.o
 *.obj
+*.exe
 
-# Debug files
-*.dSYM/
+# Keep your source and include files
+src/
+include/
 
-# Data files
-users.txt
+# Docs that are optional
+README.md
