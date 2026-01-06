@@ -1,0 +1,88 @@
+You are working on an existing C++ Data Structures Lab Final Project titled
+"Social Media Feed Manager".
+
+CRITICAL RULES (DO NOT VIOLATE):
+1. DO NOT rewrite or refactor existing working modules unless they are broken.
+2. DO NOT change existing logic, data structures, or file formats if they already work.
+3. Only ADD missing functionality.
+4. Maintain strict C++ separation:
+   - .h files contain declarations only
+   - .cpp files contain implementations only
+5. Ensure there are ZERO linker errors.
+6. The project must compile with:
+   g++ -std=c++17 -Iinclude src/*.cpp -o app
+7. After git pull, the project must compile and run without manual fixes.
+
+CURRENT IMPLEMENTED MODULES (VERIFY FIRST):
+- User Management
+- Notifications (Priority Queue)
+- Browsing History (Stack)
+- Exit system
+
+STEP 1 — VERIFICATION:
+Analyze the existing codebase and VERIFY whether:
+- User Management works correctly (BST insertion, search, follow/unfollow)
+- Notifications work with correct priority order (COMMENT > LIKE > FOLLOW)
+- History stack works correctly (push/pop/back)
+If any of these are broken, FIX them minimally without redesign.
+
+STEP 2 — ADD MISSING MODULES (ONLY THESE):
+Add the following modules exactly as described, without touching verified working code:
+
+1. Post Management
+   - Doubly Linked List for posts
+   - Fields: PostID, UserID, Content, Timestamp, Likes, Comments
+   - Create, edit, delete, display posts
+   - Timestamp-based sorting (newest first)
+
+2. Interaction System
+   - Like / Unlike posts
+   - Comment on posts
+   - Singly Linked List for comments
+   - Validation:
+     - Cannot like own post
+     - Cannot comment empty text
+
+3. Feed Generation
+   - Collect posts from followed users
+   - Merge posts by timestamp
+   - Display top 20 posts
+   - Use Linked List
+
+4. File Persistence (if missing)
+   - users.txt
+   - posts.txt
+   - connections.txt
+   - Load on startup
+   - Save on changes
+
+STEP 3 — INTEGRATION:
+- Connect new modules to the existing menu system
+- Add menu options ONLY for missing features
+- Keep existing menu options unchanged
+- Ensure no circular dependencies
+
+STEP 4 — CODE QUALITY REQUIREMENTS:
+- Use header guards
+- No global variables unless already present
+- No STL containers unless explicitly allowed (priority_queue is allowed)
+- Clear separation of responsibility per file
+
+STEP 5 — FINAL OUTPUT REQUIRED:
+After completing changes, provide:
+1. A summary of VERIFIED modules (unchanged)
+2. A list of ADDED modules
+3. A list of files that were modified
+4. A list of new files created
+5. Compilation command
+6. Run command
+7. Any assumptions made
+
+OPTIONAL GUI (DO NOT ADD UNLESS SAFE):
+If GUI is added, use Dear ImGui minimally and ensure console mode still works.
+
+IMPORTANT:
+If a feature is already partially implemented, COMPLETE it instead of duplicating it.
+If something is missing, ADD it cleanly.
+
+DO NOT overengineer. This is a data structures lab project, not a production system.
