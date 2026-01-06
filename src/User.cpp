@@ -494,7 +494,7 @@ public:
     }
 };
 
-void displayMainMenu() {
+void displayUserMainMenu() {
     cout << "\n=== SOCIAL MEDIA SYSTEM ===\n";
     cout << "1. Register\n";
     cout << "2. Login\n";
@@ -532,7 +532,7 @@ void userMenu() {
     userManager.loadConnectionsFromFile();
 
     while (true) {
-        displayMainMenu();
+        displayUserMainMenu();
         cin >> choice;
 
         if (cin.fail()) {
@@ -716,4 +716,10 @@ void userMenu() {
         }
     }
 
+}
+
+// Global function to get user's following list (stub - returns empty for now since user management is session-local)
+vector<int> getUserFollowingList(int userID) {
+    // Note: Full integration would require shared user management instance
+    return vector<int>();
 }

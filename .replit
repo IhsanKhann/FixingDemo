@@ -21,9 +21,9 @@ args = "Social Media App"
 name = "Social Media App"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "./SocialMediaApp"
-
 [workflows.workflow.metadata]
 outputType = "console"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "clang++ -std=c++17 -I include src/*.cpp -o SocialMediaApp && ./SocialMediaApp"
