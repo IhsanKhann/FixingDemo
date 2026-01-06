@@ -1,0 +1,29 @@
+modules = ["cpp-clang14", "c-clang14"]
+[agent]
+expertMode = true
+
+[nix]
+channel = "stable-25_05"
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Social Media App"
+
+[[workflows.workflow]]
+name = "Social Media App"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "./SocialMediaApp"
+
+[workflows.workflow.metadata]
+outputType = "console"

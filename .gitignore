@@ -1,0 +1,15 @@
+# Compiled binaries
+*.exe
+*.out
+SocialMediaApp
+SocialMedia
+
+# Object files
+*.o
+*.obj
+
+# Debug files
+*.dSYM/
+
+# Data files
+users.txt
