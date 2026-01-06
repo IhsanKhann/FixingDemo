@@ -1,26 +1,47 @@
-# Compiled executable
-my_program.exe
+# =====================
+# Executables / Build
+# =====================
+*.exe
+*.out
+*.o
+*.obj
 
-# IDE / editor cache
-.ccls-cache
-
-# Replit-specific files
+# =====================
+# IDE / Editor files
+# =====================
+.ccls-cache/
 .replit
+*.code-workspace
+*.vscode/
+*.idea/
+
+# =====================
+# OS / System files
+# =====================
+Thumbs.db
+.DS_Store
+*.log
+
+# =====================
+# User data / sensitive files
+# =====================
+users.txt
+connections.txt
+
+# =====================
+# Replit / Project-specific files
+# =====================
 replit.md
 attached_assets/
 
-# OS / system files (Windows)
-Thumbs.db
-*.log
-
-# Build artifacts or temp files (if any)
-*.o
-*.obj
-*.exe
-
-# Keep your source and include files
+# =====================
+# Keep source and include folders
+# =====================
 src/
 include/
 
-# Docs that are optional
-README.md
+# =====================
+# Documentation (optional)
+# =====================
+# README.md usually kept in Git, but if you generate docs you can ignore
+html/
