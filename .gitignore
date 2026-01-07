@@ -1,47 +1,79 @@
-# =====================
-# Executables / Build
-# =====================
+# =========================
+# Build directories
+# =========================
+/bin/
+/obj/
+/build/
+/out/
+
+# =========================
+# OS generated files
+# =========================
+# Windows
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+
+# =========================
+# MinGW / GCC artifacts
+# =========================
 *.exe
-*.out
 *.o
 *.obj
+*.dll
+*.lib
+*.a
+*.so
+*.pch
+*.pdb
 
-# =====================
-# IDE / Editor files
-# =====================
-.ccls-cache/
-.replit
-*.code-workspace
-*.vscode/
-*.idea/
+# =========================
+# IDE/editor files
+# =========================
+# VSCode
+.vscode/
+.history/
 
-# =====================
-# OS / System files
-# =====================
-Thumbs.db
-.DS_Store
+# JetBrains / CLion
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# =========================
+# CMake (if ever used)
+# =========================
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# =========================
+# Logs, temporary, and backup files
+# =========================
 *.log
+*.tmp
+*.bak
+*.swp
+*.swo
 
-# =====================
-# User data / sensitive files
-# =====================
-users.txt
-connections.txt
+# =========================
+# Optional: External libraries
+# =========================
+# Ignore compiled external libs if downloaded/built locally
+/lib/
+/third_party/
 
-# =====================
-# Replit / Project-specific files
-# =====================
-replit.md
-attached_assets/
-
-# =====================
-# Keep source and include folders
-# =====================
-src/
-include/
-
-# =====================
-# Documentation (optional)
-# =====================
-# README.md usually kept in Git, but if you generate docs you can ignore
-html/
+# =========================
+# Node/JS (if any scripts are used)
+# =========================
+node_modules/
