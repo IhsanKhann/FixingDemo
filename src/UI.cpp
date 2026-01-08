@@ -2,10 +2,18 @@
 
 // ==================== UI CLASS ====================
 UI::UI(UserDatabase* users, PostDatabase* posts, NotificationQueue* notifs, History* hist)
-    : currentScreen(LOGIN_SCREEN), currentUser(nullptr), viewingUser(nullptr),
-      viewingPost(nullptr), userDatabase(users), postDatabase(posts),
-      notifications(notifs), history(hist), searchResultCount(0), showError(false) {
-    
+    : currentScreen(LOGIN_SCREEN),
+      currentUser(nullptr),
+      viewingUser(nullptr),
+      viewingPost(nullptr),
+      userDatabase(users),
+      postDatabase(posts),
+      notifications(notifs),
+      history(hist),
+      showError(false),
+      searchResultCount(0) {
+
+    // Initialize input buffers
     memset(usernameInput, 0, sizeof(usernameInput));
     memset(passwordInput, 0, sizeof(passwordInput));
     memset(bioInput, 0, sizeof(bioInput));
@@ -13,7 +21,7 @@ UI::UI(UserDatabase* users, PostDatabase* posts, NotificationQueue* notifs, Hist
     memset(commentInput, 0, sizeof(commentInput));
     memset(searchInput, 0, sizeof(searchInput));
     memset(errorMessage, 0, sizeof(errorMessage));
-    
+
     feed = new Feed();
 }
 
@@ -25,7 +33,7 @@ Timestamp UI::getCurrentTime() {
     return getCurrentTimestamp();
 }
 
-string UI::timestampToString(const Timestamp& ts) {
+std::string UI::timestampToString(const Timestamp& ts) {
     return ::timestampToString(ts);
 }
 
@@ -46,26 +54,71 @@ void UI::setScreen(Screen screen) {
     currentScreen = screen;
 }
 
+// Modern gradient button
+bool GradientButton(const char* label, const ImVec2& size) {
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.4f, 0.3f, 0.8f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.4f, 0.9f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.2f, 0.7f, 1.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 8.0f);
+    bool result = ImGui::Button(label, size);
+    ImGui::PopStyleVar();
+    ImGui::PopStyleColor(3);
+    return result;
+}
+
 void UI::render() {
     ImGui::SetNextWindowPos(ImVec2(0, 0));
     ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
     
+    // Dark theme background
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.08f, 0.08f, 0.12f, 1.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+    
     ImGui::Begin("Social Media App", nullptr,
                  ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-                 ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
+                 ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar |
+                 ImGuiWindowFlags_NoScrollbar);
+    
+    // Gradient header
+    ImDrawList* drawList = ImGui::GetWindowDrawList();
+    ImVec2 headerStart = ImGui::GetCursorScreenPos();
+    ImVec2 headerEnd = ImVec2(headerStart.x + ImGui::GetWindowWidth(), headerStart.y + 60);
+    drawList->AddRectFilledMultiColor(
+        headerStart, headerEnd,
+        IM_COL32(100, 80, 200, 255),   // Top left - purple
+        IM_COL32(200, 100, 150, 255),  // Top right - pink
+        IM_COL32(255, 150, 100, 255),  // Bottom right - orange
+        IM_COL32(150, 100, 200, 255)   // Bottom left - purple-pink
+    );
+    
+    // App title in header
+    ImGui::SetCursorPos(ImVec2(20, 15));
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+    ImGui::SetWindowFontScale(1.5f);
+    ImGui::Text("Social Media App");
+    ImGui::SetWindowFontScale(1.0f);
+    ImGui::PopStyleColor();
     
     // Error popup
     if (showError) {
         ImGui::OpenPopup("Error");
-        if (ImGui::BeginPopupModal("Error", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-            ImGui::Text("%s", errorMessage);
-            if (ImGui::Button("OK", ImVec2(120, 0))) {
+        ImGui::SetNextWindowSize(ImVec2(300, 120));
+        if (ImGui::BeginPopupModal("Error", nullptr, ImGuiWindowFlags_NoResize)) {
+            ImGui::SetCursorPosY(30);
+            ImGui::TextWrapped("%s", errorMessage);
+            ImGui::SetCursorPosY(80);
+            ImGui::SetCursorPosX((300 - 120) / 2);
+            if (GradientButton("OK", ImVec2(120, 30))) {
                 showError = false;
                 ImGui::CloseCurrentPopup();
             }
             ImGui::EndPopup();
         }
     }
+    
+    // Content area (between header and bottom nav)
+    ImGui::SetCursorPos(ImVec2(0, 60));
+    ImGui::BeginChild("ContentArea", ImVec2(0, -70), false, ImGuiWindowFlags_NoScrollbar);
     
     // Render current screen
     switch (currentScreen) {
@@ -78,26 +131,122 @@ void UI::render() {
         case POST_DETAIL_SCREEN: renderPostDetailScreen(); break;
     }
     
+    ImGui::EndChild();
+    
+    // Bottom navigation
+    if (currentUser != nullptr) {
+        ImGui::SetCursorPos(ImVec2(0, ImGui::GetWindowHeight() - 70));
+        
+        ImVec2 pos = ImGui::GetCursorScreenPos();
+        drawList->AddRectFilled(
+            pos,
+            ImVec2(pos.x + ImGui::GetWindowWidth(), pos.y + 70),
+            IM_COL32(25, 25, 35, 255),
+            8.0f
+        );
+        
+        ImGui::SetCursorPosY(ImGui::GetWindowHeight() - 60);
+        
+        float buttonWidth = ImGui::GetWindowWidth() / 5.0f;
+        float iconSize = 30.0f;
+        
+        // Home button
+        ImGui::SetCursorPosX(buttonWidth * 0 + (buttonWidth - iconSize) / 2);
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.3f, 0.4f, 0.3f));
+        ImGui::PushStyleColor(ImGuiCol_Text, currentScreen == FEED_SCREEN ? 
+                              ImVec4(0.5f, 0.4f, 1.0f, 1.0f) : ImVec4(0.7f, 0.7f, 0.7f, 1.0f));
+        if (ImGui::Button("H", ImVec2(iconSize, iconSize))) setScreen(FEED_SCREEN);
+        ImGui::PopStyleColor(3);
+        
+        // Search button
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(buttonWidth * 1 + (buttonWidth - iconSize) / 2);
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.3f, 0.4f, 0.3f));
+        ImGui::PushStyleColor(ImGuiCol_Text, currentScreen == SEARCH_SCREEN ? 
+                              ImVec4(0.5f, 0.4f, 1.0f, 1.0f) : ImVec4(0.7f, 0.7f, 0.7f, 1.0f));
+        if (ImGui::Button("S", ImVec2(iconSize, iconSize))) setScreen(SEARCH_SCREEN);
+        ImGui::PopStyleColor(3);
+        
+        // Create Post (center button)
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(buttonWidth * 2 + (buttonWidth - iconSize) / 2);
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.3f, 0.9f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.6f, 0.4f, 1.0f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, iconSize / 2);
+        if (ImGui::Button("+", ImVec2(iconSize, iconSize))) setScreen(CREATE_POST_SCREEN);
+        ImGui::PopStyleVar();
+        ImGui::PopStyleColor(3);
+        
+        // Notifications button
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(buttonWidth * 3 + (buttonWidth - iconSize) / 2);
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.3f, 0.4f, 0.3f));
+        ImGui::PushStyleColor(ImGuiCol_Text, currentScreen == NOTIFICATIONS_SCREEN ? 
+                              ImVec4(0.5f, 0.4f, 1.0f, 1.0f) : ImVec4(0.7f, 0.7f, 0.7f, 1.0f));
+        if (ImGui::Button("N", ImVec2(iconSize, iconSize))) setScreen(NOTIFICATIONS_SCREEN);
+        ImGui::PopStyleColor(3);
+        
+        // Profile button
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(buttonWidth * 4 + (buttonWidth - iconSize) / 2);
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.3f, 0.4f, 0.3f));
+        ImGui::PushStyleColor(ImGuiCol_Text, currentScreen == PROFILE_SCREEN ? 
+                              ImVec4(0.5f, 0.4f, 1.0f, 1.0f) : ImVec4(0.7f, 0.7f, 0.7f, 1.0f));
+        if (ImGui::Button("P", ImVec2(iconSize, iconSize))) {
+            viewingUser = currentUser;
+            setScreen(PROFILE_SCREEN);
+        }
+        ImGui::PopStyleColor(3);
+    }
+    
     ImGui::End();
+    ImGui::PopStyleVar();
+    ImGui::PopStyleColor();
 }
 
 void UI::renderLoginScreen() {
-    ImGui::SetCursorPos(ImVec2(ImGui::GetWindowWidth() / 2 - 150, 150));
+    float windowWidth = ImGui::GetWindowWidth();
+    float contentWidth = 350;
+    
+    ImGui::SetCursorPos(ImVec2((windowWidth - contentWidth) / 2, 120));
     ImGui::BeginGroup();
     
-    ImGui::Text("Social Media Login");
-    ImGui::Separator();
-    ImGui::Spacing();
+    // Title
+    ImGui::SetWindowFontScale(1.8f);
+    ImGui::Text("Login / Register");
+    ImGui::SetWindowFontScale(1.0f);
     
-    ImGui::Text("Username:");
+    ImGui::Dummy(ImVec2(0, 20));
+    
+    // Username input
+    ImGui::Text("Username");
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 8.0f);
+    ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.15f, 0.15f, 0.2f, 1.0f));
+    ImGui::SetNextItemWidth(contentWidth);
     ImGui::InputText("##username", usernameInput, 64);
+    ImGui::PopStyleColor();
+    ImGui::PopStyleVar();
     
-    ImGui::Text("Password:");
+    ImGui::Dummy(ImVec2(0, 10));
+    
+    // Password input
+    ImGui::Text("Password");
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 8.0f);
+    ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.15f, 0.15f, 0.2f, 1.0f));
+    ImGui::SetNextItemWidth(contentWidth);
     ImGui::InputText("##password", passwordInput, 64, ImGuiInputTextFlags_Password);
+    ImGui::PopStyleColor();
+    ImGui::PopStyleVar();
     
-    ImGui::Spacing();
+    ImGui::Dummy(ImVec2(0, 30));
     
-    if (ImGui::Button("Login", ImVec2(145, 30))) {
+    // Login button
+    if (GradientButton("Login", ImVec2((contentWidth - 10) / 2, 40))) {
         if (strlen(usernameInput) == 0 || strlen(passwordInput) == 0) {
             showErrorMessage("Please enter username and password");
         } else {
@@ -116,7 +265,12 @@ void UI::renderLoginScreen() {
     
     ImGui::SameLine();
     
-    if (ImGui::Button("Register", ImVec2(145, 30))) {
+    // Register button
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.2f, 0.3f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.3f, 0.4f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.15f, 0.15f, 0.25f, 1.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 8.0f);
+    if (ImGui::Button("Register", ImVec2((contentWidth - 10) / 2, 40))) {
         if (strlen(usernameInput) < 3 || strlen(usernameInput) > 20) {
             showErrorMessage("Username must be 3-20 characters");
         } else if (strlen(passwordInput) < 6) {
@@ -133,67 +287,78 @@ void UI::renderLoginScreen() {
             }
         }
     }
+    ImGui::PopStyleVar();
+    ImGui::PopStyleColor(3);
     
     ImGui::EndGroup();
 }
 
 void UI::renderFeedScreen() {
-    // Top bar
-    ImGui::Text("Home Feed - Welcome, %s!", currentUser->username.c_str());
-    ImGui::SameLine(ImGui::GetWindowWidth() - 250);
+    ImGui::SetCursorPos(ImVec2(20, 20));
+    ImGui::Text("Home Feed");
     
-    if (ImGui::Button("Create Post")) setScreen(CREATE_POST_SCREEN);
-    ImGui::SameLine();
-    if (ImGui::Button("Refresh")) feed->generateFeed(currentUser, postDatabase);
-    
-    ImGui::Separator();
-    
-    // Navigation buttons
-    if (ImGui::Button("Feed")) setScreen(FEED_SCREEN);
-    ImGui::SameLine();
-    if (ImGui::Button("Profile")) {
-        viewingUser = currentUser;
-        setScreen(PROFILE_SCREEN);
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("Notifications")) setScreen(NOTIFICATIONS_SCREEN);
-    ImGui::SameLine();
-    if (ImGui::Button("Search")) setScreen(SEARCH_SCREEN);
-    ImGui::SameLine();
-    if (ImGui::Button("Logout")) logout();
-    
-    ImGui::Separator();
-    
-    // Feed display
-    ImGui::BeginChild("FeedScroll", ImVec2(0, 0), true);
+    ImGui::SetCursorPos(ImVec2(20, 50));
+    ImGui::BeginChild("FeedScroll", ImVec2(0, 0), false);
     
     FeedNode* node = feed->getHead();
     if (!node) {
-        ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f),
-                          "No posts to show. Follow users to see their posts!");
+        ImGui::SetCursorPos(ImVec2(20, 100));
+        ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f),
+                          "No posts to show.\nFollow users to see their posts!");
     }
     
     while (node) {
         Post* post = node->post;
         
         ImGui::PushID(post->postID);
-        ImGui::BeginGroup();
+        
+        // Post card background
+        ImDrawList* drawList = ImGui::GetWindowDrawList();
+        ImVec2 cardStart = ImGui::GetCursorScreenPos();
+        ImVec2 cardEnd = ImVec2(cardStart.x + ImGui::GetWindowWidth() - 40, cardStart.y + 140);
+        
+        drawList->AddRectFilled(cardStart, cardEnd, IM_COL32(20, 20, 30, 255), 12.0f);
+        
+        ImGui::Dummy(ImVec2(0, 10));
+        ImGui::Indent(15);
         
         // Username button
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.3f, 0.4f, 0.3f));
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.5f, 1.0f, 1.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.0f);
         if (ImGui::Button(post->username.c_str())) {
             viewingUser = userDatabase->searchByID(post->userID);
             setScreen(PROFILE_SCREEN);
         }
+        ImGui::PopStyleVar();
+        ImGui::PopStyleColor(3);
         
         // Post content
-        ImGui::TextWrapped("%s", post->content.c_str());
-        ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f),
+        ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + ImGui::GetWindowWidth() - 70);
+        ImGui::Text("%s", post->content.c_str());
+        ImGui::PopTextWrapPos();
+        
+        ImGui::Dummy(ImVec2(0, 5));
+        
+        // Timestamp
+        ImGui::TextColored(ImVec4(0.4f, 0.4f, 0.4f, 1.0f),
                           "%s", timestampToString(post->timestamp).c_str());
         
-        ImGui::Text("Likes: %d | Comments: %d", post->likes, post->commentCount);
+        ImGui::Dummy(ImVec2(0, 5));
         
-        // Like button
+        // Stats
+        ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f),
+                          "Likes: %d  |  Comments: %d", post->likes, post->commentCount);
+        
+        ImGui::Dummy(ImVec2(0, 8));
+        
+        // Action buttons
         if (post->userID != currentUser->userID) {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.3f, 0.9f, 0.3f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.6f, 0.4f, 1.0f, 0.5f));
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.7f, 1.0f, 1.0f));
+            ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.0f);
             if (ImGui::SmallButton("Like")) {
                 post->addLike();
                 notifications->addNotification(LIKE, currentUser->userID,
@@ -201,21 +366,31 @@ void UI::renderFeedScreen() {
                                               currentUser->username + " liked your post",
                                               getCurrentTime());
             }
+            ImGui::PopStyleVar();
+            ImGui::PopStyleColor(3);
             ImGui::SameLine();
         }
         
-        // View details button
-        if (ImGui::SmallButton("View Details")) {
+        // Comment button
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.3f, 0.4f, 0.5f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.4f, 0.5f, 0.7f));
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.0f);
+        if (ImGui::SmallButton("Comment")) {
             viewingPost = post;
             setScreen(POST_DETAIL_SCREEN);
         }
+        ImGui::PopStyleVar();
+        ImGui::PopStyleColor(2);
         
-        ImGui::EndGroup();
-        ImGui::Separator();
+        ImGui::Unindent(15);
+        ImGui::Dummy(ImVec2(0, 15));
+        
         ImGui::PopID();
         
         node = node->next;
     }
+    
+    ImGui::Dummy(ImVec2(0, 20));
     
     ImGui::EndChild();
 }
@@ -226,35 +401,71 @@ void UI::renderProfileScreen() {
         return;
     }
     
-    ImGui::Text("Profile: %s", viewingUser->username.c_str());
+    ImGui::SetCursorPos(ImVec2(20, 20));
     
-    // Navigation
-    if (ImGui::Button("Back to Feed")) setScreen(FEED_SCREEN);
+    // Back button
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.2f, 0.3f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.3f, 0.4f, 1.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.0f);
+    if (ImGui::Button("< Back", ImVec2(80, 30))) setScreen(FEED_SCREEN);
+    ImGui::PopStyleVar();
+    ImGui::PopStyleColor(2);
+    
     ImGui::SameLine();
-    if (ImGui::Button("Search")) setScreen(SEARCH_SCREEN);
-    ImGui::SameLine();
-    if (ImGui::Button("Logout")) logout();
+    ImGui::SetCursorPosX(ImGui::GetWindowWidth() - 100);
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.3f, 0.4f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.4f, 0.5f, 1.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.0f);
+    if (ImGui::Button("Logout", ImVec2(80, 30))) logout();
+    ImGui::PopStyleVar();
+    ImGui::PopStyleColor(2);
     
-    ImGui::Separator();
+    ImGui::SetCursorPos(ImVec2(20, 70));
+    ImGui::BeginChild("ProfileScroll", ImVec2(0, 0), false);
     
-    // Profile info
-    ImGui::Text("Username: %s", viewingUser->username.c_str());
-    ImGui::Text("Bio: %s", viewingUser->bio.empty() ? "No bio" : viewingUser->bio.c_str());
-    ImGui::Text("Followers: %d | Following: %d",
+    // Profile header card
+    ImDrawList* drawList = ImGui::GetWindowDrawList();
+    ImVec2 headerStart = ImGui::GetCursorScreenPos();
+    ImVec2 headerEnd = ImVec2(headerStart.x + ImGui::GetWindowWidth() - 40, headerStart.y + 200);
+    drawList->AddRectFilled(headerStart, headerEnd, IM_COL32(20, 20, 30, 255), 12.0f);
+    
+    ImGui::Dummy(ImVec2(0, 20));
+    ImGui::Indent(20);
+    
+    // Username
+    ImGui::SetWindowFontScale(1.5f);
+    ImGui::Text("%s", viewingUser->username.c_str());
+    ImGui::SetWindowFontScale(1.0f);
+    
+    ImGui::Dummy(ImVec2(0, 10));
+    
+    // Bio
+    ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f),
+                      "%s", viewingUser->bio.empty() ? "No bio" : viewingUser->bio.c_str());
+    
+    ImGui::Dummy(ImVec2(0, 15));
+    
+    // Stats
+    ImGui::Text("Followers: %d  |  Following: %d",
                 viewingUser->followerCount, viewingUser->followingCount);
     
-    ImGui::Spacing();
+    ImGui::Dummy(ImVec2(0, 20));
     
-    // Follow/Unfollow button
+    // Follow/Unfollow or Edit Bio
     if (viewingUser->userID != currentUser->userID) {
         if (currentUser->isFollowing(viewingUser->userID)) {
-            if (ImGui::Button("Unfollow")) {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.3f, 0.4f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.4f, 0.5f, 1.0f));
+            ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 8.0f);
+            if (ImGui::Button("Unfollow", ImVec2(150, 35))) {
                 currentUser->removeFollowing(viewingUser->userID);
                 viewingUser->removeFollower(currentUser->userID);
                 feed->generateFeed(currentUser, postDatabase);
             }
+            ImGui::PopStyleVar();
+            ImGui::PopStyleColor(2);
         } else {
-            if (ImGui::Button("Follow")) {
+            if (GradientButton("Follow", ImVec2(150, 35))) {
                 currentUser->addFollowing(viewingUser->userID);
                 viewingUser->addFollower(currentUser->userID);
                 notifications->addNotification(FOLLOW, currentUser->userID,
@@ -265,21 +476,29 @@ void UI::renderProfileScreen() {
             }
         }
     } else {
-        // Edit bio for own profile
         ImGui::Text("Edit Bio:");
-        ImGui::InputTextMultiline("##bio", bioInput, 256, ImVec2(-1, 60));
-        if (ImGui::Button("Update Bio")) {
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 8.0f);
+        ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.15f, 0.15f, 0.2f, 1.0f));
+        ImGui::InputTextMultiline("##bio", bioInput, 256, ImVec2(ImGui::GetWindowWidth() - 80, 60));
+        ImGui::PopStyleColor();
+        ImGui::PopStyleVar();
+        if (GradientButton("Update Bio", ImVec2(150, 35))) {
             viewingUser->bio = string(bioInput);
             memset(bioInput, 0, sizeof(bioInput));
             showErrorMessage("Bio updated successfully!");
         }
     }
     
-    ImGui::Separator();
+    ImGui::Unindent(20);
+    ImGui::Dummy(ImVec2(0, 30));
     
-    // User's posts
-    ImGui::Text("Posts:");
-    ImGui::BeginChild("ProfilePosts", ImVec2(0, 0), true);
+    // Posts section
+    ImGui::Indent(20);
+    ImGui::SetWindowFontScale(1.2f);
+    ImGui::Text("Posts");
+    ImGui::SetWindowFontScale(1.0f);
+    ImGui::Dummy(ImVec2(0, 10));
+    ImGui::Unindent(20);
     
     Post* post = postDatabase->getHead();
     bool foundPosts = false;
@@ -289,111 +508,160 @@ void UI::renderProfileScreen() {
             foundPosts = true;
             ImGui::PushID(post->postID);
             
-            ImGui::TextWrapped("%s", post->content.c_str());
-            ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f),
+            // Post card
+            ImVec2 cardStart = ImGui::GetCursorScreenPos();
+            ImVec2 cardEnd = ImVec2(cardStart.x + ImGui::GetWindowWidth() - 40, cardStart.y + 120);
+            drawList->AddRectFilled(cardStart, cardEnd, IM_COL32(20, 20, 30, 255), 12.0f);
+            
+            ImGui::Dummy(ImVec2(0, 10));
+            ImGui::Indent(20);
+            
+            ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + ImGui::GetWindowWidth() - 80);
+            ImGui::Text("%s", post->content.c_str());
+            ImGui::PopTextWrapPos();
+            
+            ImGui::TextColored(ImVec4(0.4f, 0.4f, 0.4f, 1.0f),
                               "%s", timestampToString(post->timestamp).c_str());
             ImGui::Text("Likes: %d | Comments: %d", post->likes, post->commentCount);
             
-            if (ImGui::SmallButton("View Details")) {
+            ImGui::Dummy(ImVec2(0, 5));
+            
+            if (ImGui::SmallButton("View")) {
                 viewingPost = post;
                 setScreen(POST_DETAIL_SCREEN);
             }
             
             if (post->userID == currentUser->userID) {
                 ImGui::SameLine();
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.2f, 0.2f, 0.5f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 0.3f, 0.3f, 0.7f));
                 if (ImGui::SmallButton("Delete")) {
                     postDatabase->deletePost(post->postID);
                     feed->generateFeed(currentUser, postDatabase);
                 }
+                ImGui::PopStyleColor(2);
             }
             
-            ImGui::Separator();
+            ImGui::Unindent(20);
+            ImGui::Dummy(ImVec2(0, 15));
+            
             ImGui::PopID();
         }
         post = post->next;
     }
     
     if (!foundPosts) {
-        ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "No posts yet");
+        ImGui::Indent(20);
+        ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "No posts yet");
+        ImGui::Unindent(20);
     }
     
+    ImGui::Dummy(ImVec2(0, 20));
     ImGui::EndChild();
 }
 
 void UI::renderNotificationsScreen() {
+    // Header
+    ImGui::SetCursorPos(ImVec2(20, 20));
+    ImGui::SetWindowFontScale(1.3f);
     ImGui::Text("Notifications");
+    ImGui::SetWindowFontScale(1.0f);
     
-    if (ImGui::Button("Back to Feed")) setScreen(FEED_SCREEN);
     ImGui::SameLine();
-    if (ImGui::Button("Clear All")) notifications->clearAll();
-    
-    ImGui::Separator();
-    
-    ImGui::BeginChild("NotificationScroll", ImVec2(0, 0), true);
-    
+    ImGui::SetCursorPosX(ImGui::GetWindowWidth() - 100);
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f,0.3f,0.4f,1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f,0.4f,0.5f,1.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.0f);
+    if (ImGui::Button("Clear All", ImVec2(80,30))) notifications->clearAll();
+    ImGui::PopStyleVar();
+    ImGui::PopStyleColor(2);
+
+    // Scrollable notifications
+    ImGui::SetCursorPos(ImVec2(20,70));
+    ImGui::BeginChild("NotificationScroll", ImVec2(0,0), false);
+
     Notification* notifArr[200];
     int count = 0;
     notifications->getAllNotifications(notifArr, count);
-    
+
     if (count == 0) {
-        ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "No notifications");
+        ImGui::TextColored(ImVec4(0.5f,0.5f,0.5f,1.0f), "No notifications");
     }
-    
+
     for (int i = 0; i < count; i++) {
         Notification* n = notifArr[i];
-        
-        // Don't show self-notifications
         if (n->fromUserID == currentUser->userID) continue;
-        
+
         ImGui::PushID(n->notificationID);
-        
-        const char* typeStr = "";
-        ImVec4 color;
-        
+
+        // Draw notification card
+        ImDrawList* drawList = ImGui::GetWindowDrawList();
+        ImVec2 start = ImGui::GetCursorScreenPos();
+        ImVec2 end = ImVec2(start.x + ImGui::GetContentRegionAvail().x, start.y + 100);
+
+        ImU32 cardColor = IM_COL32(25,25,35,255);
         switch (n->type) {
-            case COMMENT:
-                typeStr = "[COMMENT]";
-                color = ImVec4(1.0f, 0.3f, 0.3f, 1.0f);
-                break;
-            case LIKE:
-                typeStr = "[LIKE]";
-                color = ImVec4(1.0f, 0.7f, 0.0f, 1.0f);
-                break;
-            case FOLLOW:
-                typeStr = "[FOLLOW]";
-                color = ImVec4(0.0f, 0.7f, 1.0f, 1.0f);
-                break;
+            case COMMENT: cardColor = IM_COL32(40,25,35,255); break;
+            case LIKE:    cardColor = IM_COL32(40,35,25,255); break;
+            case FOLLOW:  cardColor = IM_COL32(25,35,40,255); break;
         }
-        
-        ImGui::TextColored(color, "%s", typeStr);
+        drawList->AddRectFilled(start, end, cardColor, 12.0f);
+
+        ImGui::Dummy(ImVec2(0,10));
+        ImGui::Indent(15);
+
+        // Type badge + message
+        const char* typeStr = "";
+        ImVec4 typeColor;
+        switch (n->type) {
+            case COMMENT: typeStr="COMMENT"; typeColor=ImVec4(1,0.4f,0.4f,1); break;
+            case LIKE:    typeStr="LIKE";    typeColor=ImVec4(1,0.8f,0.2f,1); break;
+            case FOLLOW:  typeStr="FOLLOW";  typeColor=ImVec4(0.3f,0.7f,1,1); break;
+        }
+
+        ImGui::TextColored(typeColor, "[%s]", typeStr);
         ImGui::SameLine();
         ImGui::Text("%s", n->message.c_str());
-        ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f),
-                          "%s", timestampToString(n->timestamp).c_str());
-        
-        if (!n->isRead && ImGui::SmallButton("Mark Read")) {
-            n->isRead = true;
+
+        ImGui::TextColored(ImVec4(0.5f,0.5f,0.5f,1), "%s", timestampToString(n->timestamp).c_str());
+
+        // Mark as read button
+        if (!n->isRead) {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.4f,0.3f,0.8f,0.5f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f,0.4f,0.9f,0.7f));
+            ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.0f);
+            if (ImGui::SmallButton("Mark Read")) n->isRead = true;
+            ImGui::PopStyleVar();
+            ImGui::PopStyleColor(2);
         }
-        
-        ImGui::Separator();
+
+        ImGui::Unindent(15);
+        ImGui::Dummy(ImVec2(0,15));
         ImGui::PopID();
     }
-    
+
+    ImGui::Dummy(ImVec2(0,20));
     ImGui::EndChild();
 }
 
 void UI::renderSearchScreen() {
-    ImGui::Text("Search Users");
+    ImGui::SetCursorPos(ImVec2(20, 20));
+    ImGui::SetWindowFontScale(1.3f);
+    ImGui::Text("Search");
+    ImGui::SetWindowFontScale(1.0f);
     
-    if (ImGui::Button("Back to Feed")) setScreen(FEED_SCREEN);
+    ImGui::SetCursorPos(ImVec2(20, 70));
     
-    ImGui::Separator();
+    // Search bar
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 10.0f);
+    ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.15f, 0.15f, 0.2f, 1.0f));
+    ImGui::SetNextItemWidth(ImGui::GetWindowWidth() - 140);
+    ImGui::InputTextWithHint("##search", "Search user...", searchInput, 64);
+    ImGui::PopStyleColor();
+    ImGui::PopStyleVar();
     
-    ImGui::Text("Search:");
-    ImGui::InputText("##search", searchInput, 64);
     ImGui::SameLine();
-    
-    if (ImGui::Button("Search")) {
+    if (GradientButton("Search", ImVec2(90, 32))) {
         searchResultCount = 0;
         if (strlen(searchInput) > 0) {
             User* allUsers[100];
@@ -414,55 +682,103 @@ void UI::renderSearchScreen() {
         }
     }
     
-    ImGui::Separator();
-    ImGui::BeginChild("SearchResults", ImVec2(0, 0), true);
+    ImGui::SetCursorPos(ImVec2(20, 120));
+    ImGui::BeginChild("SearchResults", ImVec2(0, 0), false);
     
     if (searchResultCount == 0) {
-        ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f),
-                          "No results. Try searching for a username.");
+        ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f),
+                          "No results.\nTry searching for a username.");
     }
     
     for (int i = 0; i < searchResultCount; i++) {
         ImGui::PushID(i);
         
+        // User card
+        ImDrawList* drawList = ImGui::GetWindowDrawList();
+        ImVec2 cardStart = ImGui::GetCursorScreenPos();
+        ImVec2 cardEnd = ImVec2(cardStart.x + ImGui::GetWindowWidth() - 40, cardStart.y + 80);
+        drawList->AddRectFilled(cardStart, cardEnd, IM_COL32(20, 20, 30, 255), 12.0f);
+        
+        ImGui::Dummy(ImVec2(0, 10));
+        ImGui::Indent(15);
+        
+        // Username button
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.3f, 0.4f, 0.3f));
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.5f, 1.0f, 1.0f));
+        ImGui::SetWindowFontScale(1.2f);
         if (ImGui::Button(searchResults[i]->username.c_str())) {
             viewingUser = searchResults[i];
             setScreen(PROFILE_SCREEN);
         }
+        ImGui::SetWindowFontScale(1.0f);
+        ImGui::PopStyleColor(3);
         
-        ImGui::SameLine();
-        ImGui::Text("- Followers: %d", searchResults[i]->followerCount);
+        ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f),
+                          "Followers: %d", searchResults[i]->followerCount);
+        
+        ImGui::Unindent(15);
+        ImGui::Dummy(ImVec2(0, 15));
         
         ImGui::PopID();
     }
     
+    ImGui::Dummy(ImVec2(0, 20));
     ImGui::EndChild();
 }
 
 void UI::renderCreatePostScreen() {
-    ImGui::Text("Create New Post");
+    ImGui::SetCursorPos(ImVec2(20, 20));
+    ImGui::SetWindowFontScale(1.3f);
+    ImGui::Text("Create Post");
+    ImGui::SetWindowFontScale(1.0f);
     
-    if (ImGui::Button("Cancel")) {
+    ImGui::SameLine();
+    ImGui::SetCursorPosX(ImGui::GetWindowWidth() - 100);
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.3f, 0.4f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.4f, 0.5f, 1.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.0f);
+    if (ImGui::Button("Cancel", ImVec2(80, 30))) {
         setScreen(FEED_SCREEN);
         memset(postInput, 0, sizeof(postInput));
     }
+    ImGui::PopStyleVar();
+    ImGui::PopStyleColor(2);
     
-    ImGui::Separator();
+    ImGui::SetCursorPos(ImVec2(20, 80));
+    ImGui::BeginChild("CreatePostArea", ImVec2(0, 0), false);
+    
+    // Post input card
+    ImDrawList* drawList = ImGui::GetWindowDrawList();
+    ImVec2 cardStart = ImGui::GetCursorScreenPos();
+    ImVec2 cardEnd = ImVec2(cardStart.x + ImGui::GetWindowWidth() - 40, cardStart.y + 300);
+    drawList->AddRectFilled(cardStart, cardEnd, IM_COL32(20, 20, 30, 255), 12.0f);
+    
+    ImGui::Dummy(ImVec2(0, 15));
+    ImGui::Indent(15);
     
     ImGui::Text("What's on your mind?");
-    ImGui::InputTextMultiline("##post", postInput, 512, ImVec2(-1, 200));
+    ImGui::Dummy(ImVec2(0, 10));
+    
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 8.0f);
+    ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.12f, 0.12f, 0.18f, 1.0f));
+    ImGui::InputTextMultiline("##post", postInput, 512, 
+                              ImVec2(ImGui::GetWindowWidth() - 70, 200));
+    ImGui::PopStyleColor();
+    ImGui::PopStyleVar();
+    
+    ImGui::Dummy(ImVec2(0, 10));
     
     int len = strlen(postInput);
-    ImGui::Text("Characters: %d / 280", len);
+    ImVec4 charColor = len > 280 ? ImVec4(1.0f, 0.3f, 0.3f, 1.0f) : ImVec4(0.6f, 0.6f, 0.6f, 1.0f);
+    ImGui::TextColored(charColor, "Characters: %d / 280", len);
     
-    if (len > 280) {
-        ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f),
-                          "Post is too long!");
-    }
+    ImGui::Unindent(15);
+    ImGui::Dummy(ImVec2(0, 15));
     
-    ImGui::Spacing();
-    
-    if (ImGui::Button("Post", ImVec2(120, 30))) {
+    // Post button
+    ImGui::SetCursorPosX((ImGui::GetWindowWidth() - 200) / 2);
+    if (GradientButton("Post", ImVec2(200, 45))) {
         if (len == 0) {
             showErrorMessage("Post cannot be empty");
         } else if (len > 280) {
@@ -475,6 +791,8 @@ void UI::renderCreatePostScreen() {
             setScreen(FEED_SCREEN);
         }
     }
+    
+    ImGui::EndChild();
 }
 
 void UI::renderPostDetailScreen() {
@@ -483,27 +801,59 @@ void UI::renderPostDetailScreen() {
         return;
     }
     
-    ImGui::Text("Post Details");
+    ImGui::SetCursorPos(ImVec2(20, 20));
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.2f, 0.3f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.3f, 0.4f, 1.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.0f);
+    if (ImGui::Button("< Back", ImVec2(80, 30))) setScreen(FEED_SCREEN);
+    ImGui::PopStyleVar();
+    ImGui::PopStyleColor(2);
     
-    if (ImGui::Button("Back")) setScreen(FEED_SCREEN);
+    ImGui::SetCursorPos(ImVec2(20, 70));
+    ImGui::BeginChild("PostDetailScroll", ImVec2(0, 0), false);
     
-    ImGui::Separator();
+    ImDrawList* drawList = ImGui::GetWindowDrawList();
     
-    // Post content
-    ImGui::BeginChild("PostDetail", ImVec2(0, 250), true);
+    // Post card
+    ImVec2 postStart = ImGui::GetCursorScreenPos();
+    ImVec2 postEnd = ImVec2(postStart.x + ImGui::GetWindowWidth() - 40, postStart.y + 200);
+    drawList->AddRectFilled(postStart, postEnd, IM_COL32(20, 20, 30, 255), 12.0f);
     
+    ImGui::Dummy(ImVec2(0, 15));
+    ImGui::Indent(15);
+    
+    // Username
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.3f, 0.4f, 0.3f));
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.5f, 1.0f, 1.0f));
+    ImGui::SetWindowFontScale(1.2f);
     if (ImGui::Button(viewingPost->username.c_str())) {
         viewingUser = userDatabase->searchByID(viewingPost->userID);
         setScreen(PROFILE_SCREEN);
     }
+    ImGui::SetWindowFontScale(1.0f);
+    ImGui::PopStyleColor(3);
     
-    ImGui::TextWrapped("%s", viewingPost->content.c_str());
-    ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f),
+    ImGui::Dummy(ImVec2(0, 10));
+    
+    // Post content
+    ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + ImGui::GetWindowWidth() - 70);
+    ImGui::Text("%s", viewingPost->content.c_str());
+    ImGui::PopTextWrapPos();
+    
+    ImGui::Dummy(ImVec2(0, 10));
+    
+    ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f),
                       "%s", timestampToString(viewingPost->timestamp).c_str());
-    ImGui::Text("Likes: %d | Comments: %d", viewingPost->likes, viewingPost->commentCount);
     
+    ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f),
+                      "Likes: %d  |  Comments: %d", viewingPost->likes, viewingPost->commentCount);
+    
+    ImGui::Dummy(ImVec2(0, 15));
+    
+    // Like button
     if (viewingPost->userID != currentUser->userID) {
-        if (ImGui::Button("Like")) {
+        if (GradientButton("Like", ImVec2(100, 35))) {
             viewingPost->addLike();
             notifications->addNotification(LIKE, currentUser->userID,
                                           currentUser->username, viewingPost->postID,
@@ -512,40 +862,67 @@ void UI::renderPostDetailScreen() {
         }
     }
     
-    ImGui::EndChild();
+    ImGui::Unindent(15);
+    ImGui::Dummy(ImVec2(0, 20));
     
-    // Comments section
-    ImGui::Text("Comments:");
-    ImGui::BeginChild("Comments", ImVec2(0, 200), true);
+    // Comments section header
+    ImGui::Indent(15);
+    ImGui::SetWindowFontScale(1.2f);
+    ImGui::Text("Comments");
+    ImGui::SetWindowFontScale(1.0f);
+    ImGui::Unindent(15);
+    ImGui::Dummy(ImVec2(0, 10));
     
+    // Comments list
     Comment* comment = viewingPost->getComments();
     if (!comment) {
-        ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "No comments yet");
+        ImGui::Indent(15);
+        ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "No comments yet");
+        ImGui::Unindent(15);
     }
     
     while (comment) {
         ImGui::PushID(comment->commentID);
         
-        ImGui::TextColored(ImVec4(0.3f, 0.7f, 1.0f, 1.0f),
-                          "%s:", comment->username.c_str());
-        ImGui::SameLine();
-        ImGui::TextWrapped("%s", comment->content.c_str());
-        ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f),
+        // Comment card
+        ImVec2 commentStart = ImGui::GetCursorScreenPos();
+        ImVec2 commentEnd = ImVec2(commentStart.x + ImGui::GetWindowWidth() - 40, commentStart.y + 90);
+        drawList->AddRectFilled(commentStart, commentEnd, IM_COL32(25, 25, 35, 255), 10.0f);
+        
+        ImGui::Dummy(ImVec2(0, 10));
+        ImGui::Indent(15);
+        
+        ImGui::TextColored(ImVec4(0.4f, 0.6f, 1.0f, 1.0f), "%s:", comment->username.c_str());
+        
+        ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + ImGui::GetWindowWidth() - 70);
+        ImGui::Text("%s", comment->content.c_str());
+        ImGui::PopTextWrapPos();
+        
+        ImGui::TextColored(ImVec4(0.4f, 0.4f, 0.4f, 1.0f),
                           "%s", timestampToString(comment->timestamp).c_str());
-        ImGui::Separator();
+        
+        ImGui::Unindent(15);
+        ImGui::Dummy(ImVec2(0, 15));
         
         ImGui::PopID();
         comment = comment->next;
     }
     
-    ImGui::EndChild();
-    
-    // Add comment
+    // Add comment section
     if (viewingPost->userID != currentUser->userID) {
+        ImGui::Dummy(ImVec2(0, 10));
+        ImGui::Indent(15);
         ImGui::Text("Add Comment:");
-        ImGui::InputTextMultiline("##comment", commentInput, 512, ImVec2(-1, 60));
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 8.0f);
+        ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.15f, 0.15f, 0.2f, 1.0f));
+        ImGui::InputTextMultiline("##comment", commentInput, 512, 
+                                  ImVec2(ImGui::GetWindowWidth() - 70, 80));
+        ImGui::PopStyleColor();
+        ImGui::PopStyleVar();
         
-        if (ImGui::Button("Post Comment")) {
+        ImGui::Dummy(ImVec2(0, 10));
+        
+        if (GradientButton("Post Comment", ImVec2(150, 35))) {
             if (strlen(commentInput) > 0) {
                 viewingPost->addComment(currentUser->userID, currentUser->username,
                                        commentInput, getCurrentTime());
@@ -556,5 +933,9 @@ void UI::renderPostDetailScreen() {
                 memset(commentInput, 0, sizeof(commentInput));
             }
         }
+        ImGui::Unindent(15);
     }
+    
+    ImGui::Dummy(ImVec2(0, 30));
+    ImGui::EndChild();
 }

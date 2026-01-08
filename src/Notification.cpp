@@ -1,4 +1,4 @@
-#include "App.h"
+#include "../include/App.h"
 
 // ==================== NOTIFICATION CLASS ====================
 Notification::Notification()

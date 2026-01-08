@@ -1,7 +1,7 @@
 #ifndef APP_H
 #define APP_H
 
-// Standard Library Headers
+// ==================== STANDARD LIBRARIES ====================
 #include <iostream>
 #include <string>
 #include <vector>
@@ -11,12 +11,12 @@
 #include <fstream>
 #include <sstream>
 
-// ImGui Headers
+// ==================== IMGUI ====================
 #include "../imgui/imgui.h"
 #include "../imgui/backends/imgui_impl_glfw.h"
 #include "../imgui/backends/imgui_impl_opengl3.h"
 
-// GLFW and OpenGL
+// ==================== GLFW ====================
 #include <GLFW/glfw3.h>
 
 using namespace std;
@@ -38,16 +38,15 @@ enum Screen {
     POST_DETAIL_SCREEN
 };
 
-// ==================== STRUCTS ====================
+// ==================== TIMESTAMP STRUCT ====================
 struct Timestamp {
     int year, month, day;
     int hour, minute, second;
-    
+
     Timestamp() : year(2025), month(1), day(1), hour(0), minute(0), second(0) {}
-    
     Timestamp(int y, int m, int d, int h, int min, int s)
         : year(y), month(m), day(d), hour(h), minute(min), second(s) {}
-    
+
     bool isEarlier(const Timestamp& other) const {
         if (year != other.year) return year < other.year;
         if (month != other.month) return month < other.month;
@@ -56,11 +55,11 @@ struct Timestamp {
         if (minute != other.minute) return minute < other.minute;
         return second < other.second;
     }
-    
+
     bool isNewer(const Timestamp& other) const {
         return !isEarlier(other) && !equals(other);
     }
-    
+
     bool equals(const Timestamp& other) const {
         return year == other.year && month == other.month && day == other.day &&
                hour == other.hour && minute == other.minute && second == other.second;
@@ -88,7 +87,7 @@ public:
     string content;
     Timestamp timestamp;
     Comment* next;
-    
+
     Comment(int id, int uid, const string& uname, const string& text, Timestamp ts);
 };
 
@@ -105,10 +104,10 @@ public:
     Comment* comments;
     Post* prev;
     Post* next;
-    
+
     Post(int pid, int uid, const string& uname, const string& text, Timestamp ts);
     ~Post();
-    
+
     void addLike();
     void addComment(int uid, const string& uname, const string& text, Timestamp ts);
     Comment* getComments() { return comments; }
@@ -127,10 +126,10 @@ public:
     int followerCount;
     int followingCapacity;
     int followersCapacity;
-    
+
     User(int id, const string& uname, const string& pass, const string& userBio = "");
     ~User();
-    
+
     bool addFollowing(int targetID);
     bool removeFollowing(int targetID);
     bool addFollower(int followerID);
@@ -143,7 +142,7 @@ class FeedNode {
 public:
     Post* post;
     FeedNode* next;
-    
+
     FeedNode(Post* p) : post(p), next(nullptr) {}
 };
 
@@ -151,14 +150,14 @@ class Feed {
 private:
     FeedNode* head;
     int count;
-    
+
 public:
     Feed();
     ~Feed();
-    
+
     void clear();
     void insertSorted(Post* post);
-    void generateFeed(User* currentUser, class PostDatabase* allPosts);
+    void generateFeed(User* currentUser, PostDatabase* allPosts);
     FeedNode* getHead() { return head; }
 };
 
@@ -168,7 +167,7 @@ public:
     int userID;
     int postID;
     HistoryNode* next;
-    
+
     HistoryNode(int uid, int pid) : userID(uid), postID(pid), next(nullptr) {}
 };
 
@@ -177,11 +176,11 @@ private:
     HistoryNode* top;
     int count;
     static const int MAX_HISTORY = 50;
-    
+
 public:
     History();
     ~History();
-    
+
     void push(int userID, int postID);
     bool pop(int& userID, int& postID);
     bool peek(int& userID, int& postID);
@@ -200,11 +199,11 @@ public:
     string message;
     Timestamp timestamp;
     bool isRead;
-    
+
     Notification();
     Notification(int id, NotificationType t, int fromID, const string& fromUser,
                  int pID, const string& msg, Timestamp ts);
-    
+
     bool hasHigherPriority(const Notification& other) const;
 };
 
@@ -214,20 +213,20 @@ private:
     int capacity;
     int size;
     int nextID;
-    
+
     int parent(int i) { return (i - 1) / 2; }
     int leftChild(int i) { return 2 * i + 1; }
     int rightChild(int i) { return 2 * i + 2; }
     void swap(int i, int j);
     void heapifyUp(int index);
     void heapifyDown(int index);
-    
+
 public:
     NotificationQueue(int cap = 200);
     ~NotificationQueue();
-    
+
     void addNotification(NotificationType type, int fromUserID, const string& fromUsername,
-                        int postID, const string& message, Timestamp timestamp);
+                         int postID, const string& message, Timestamp timestamp);
     void getAllNotifications(Notification** arr, int& count);
     void clearAll();
     bool isEmpty() { return size == 0; }
@@ -239,7 +238,7 @@ public:
     User* user;
     UserNode* left;
     UserNode* right;
-    
+
     UserNode(User* u) : user(u), left(nullptr), right(nullptr) {}
 };
 
@@ -247,17 +246,17 @@ class UserDatabase {
 private:
     UserNode* root;
     int nextUserID;
-    
+
     UserNode* insertNode(UserNode* node, User* user);
     UserNode* searchByID(UserNode* node, int userID);
     User* searchByUsername(UserNode* node, const string& username);
     void destroyTree(UserNode* node);
     void collectUsers(UserNode* node, User** arr, int& index);
-    
+
 public:
     UserDatabase();
     ~UserDatabase();
-    
+
     User* registerUser(const string& username, const string& password, const string& bio = "");
     User* login(const string& username, const string& password);
     User* searchByID(int userID);
@@ -272,11 +271,11 @@ private:
     Post* tail;
     int nextPostID;
     int nextCommentID;
-    
+
 public:
     PostDatabase();
     ~PostDatabase();
-    
+
     Post* createPost(int userID, const string& username, const string& content, Timestamp ts);
     bool deletePost(int postID);
     Post* findPost(int postID);
@@ -291,13 +290,13 @@ private:
     User* currentUser;
     User* viewingUser;
     Post* viewingPost;
-    
+
     UserDatabase* userDatabase;
     PostDatabase* postDatabase;
     NotificationQueue* notifications;
     History* history;
     Feed* feed;
-    
+
     char usernameInput[65];
     char passwordInput[65];
     char bioInput[257];
@@ -306,22 +305,22 @@ private:
     char searchInput[65];
     char errorMessage[256];
     bool showError;
-    
+
     User* searchResults[100];
     int searchResultCount;
-    
+
     void showErrorMessage(const char* msg);
     Timestamp getCurrentTime();
     string timestampToString(const Timestamp& ts);
-    
+
 public:
     UI(UserDatabase* users, PostDatabase* posts, NotificationQueue* notifs, History* hist);
     ~UI();
-    
+
     void render();
     void logout();
     void setScreen(Screen screen);
-    
+
     void renderLoginScreen();
     void renderFeedScreen();
     void renderProfileScreen();

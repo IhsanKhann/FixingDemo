@@ -1,4 +1,4 @@
-#include "App.h"
+#include "../include/App.h"
 
 // ==================== USER CLASS ====================
 User::User(int id, const string& uname, const string& pass, const string& userBio)
