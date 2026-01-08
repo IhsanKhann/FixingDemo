@@ -193,3 +193,60 @@ void UserDatabase::getAllUsers(User** arr, int& count) {
     count = 0;
     collectUsers(root, arr, count);
 }
+
+// ==================== DUMMY DATA GENERATION ====================
+void UserDatabase::generateDummyUsers() {
+    // Create 5 dummy users
+    User* alice = registerUser("alice", "password123", "Love coding and coffee! ☕");
+    User* bob = registerUser("bob", "password123", "Gaming enthusiast 🎮");
+    User* charlie = registerUser("charlie", "password123", "Traveling the world 🌍");
+    User* diana = registerUser("diana", "password123", "Photography lover 📷");
+    User* eve = registerUser("eve", "password123", "Music is life 🎵");
+    
+    if (!alice || !bob || !charlie || !diana || !eve) return;
+    
+    // Set up follower relationships
+    // Alice follows Bob, Charlie, Diana
+    alice->addFollowing(bob->userID);
+    bob->addFollower(alice->userID);
+    
+    alice->addFollowing(charlie->userID);
+    charlie->addFollower(alice->userID);
+    
+    alice->addFollowing(diana->userID);
+    diana->addFollower(alice->userID);
+    
+    // Bob follows Alice, Eve
+    bob->addFollowing(alice->userID);
+    alice->addFollower(bob->userID);
+    
+    bob->addFollowing(eve->userID);
+    eve->addFollower(bob->userID);
+    
+    // Charlie follows Alice, Diana, Eve
+    charlie->addFollowing(alice->userID);
+    alice->addFollower(charlie->userID);
+    
+    charlie->addFollowing(diana->userID);
+    diana->addFollower(charlie->userID);
+    
+    charlie->addFollowing(eve->userID);
+    eve->addFollower(charlie->userID);
+    
+    // Diana follows Bob, Charlie
+    diana->addFollowing(bob->userID);
+    bob->addFollower(diana->userID);
+    
+    diana->addFollowing(charlie->userID);
+    charlie->addFollower(diana->userID);
+    
+    // Eve follows Alice, Bob, Diana
+    eve->addFollowing(alice->userID);
+    alice->addFollower(eve->userID);
+    
+    eve->addFollowing(bob->userID);
+    bob->addFollower(eve->userID);
+    
+    eve->addFollowing(diana->userID);
+    diana->addFollower(eve->userID);
+}

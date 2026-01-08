@@ -114,3 +114,104 @@ string timestampToString(const Timestamp& ts) {
             ts.year, ts.month, ts.day, ts.hour, ts.minute, ts.second);
     return string(buffer);
 }
+
+// ==================== DUMMY DATA GENERATION ====================
+void PostDatabase::generateDummyPosts(UserDatabase* userDB) {
+    // Get dummy users
+    User* alice = userDB->searchByUsername("alice");
+    User* bob = userDB->searchByUsername("bob");
+    User* charlie = userDB->searchByUsername("charlie");
+    User* diana = userDB->searchByUsername("diana");
+    User* eve = userDB->searchByUsername("eve");
+    
+    if (!alice || !bob || !charlie || !diana || !eve) return;
+    
+    // Create timestamps for posts (going back in time)
+    Timestamp now = getCurrentTimestamp();
+    
+    // Helper to create timestamp X hours ago
+    auto hoursAgo = [&](int hours) {
+        Timestamp ts = now;
+        ts.hour -= hours;
+        if (ts.hour < 0) {
+            ts.hour += 24;
+            ts.day -= 1;
+        }
+        return ts;
+    };
+    
+    // Create posts (most recent first)
+    Post* post1 = createPost(eve->userID, eve->username, 
+        "Just discovered this amazing Lo-Fi playlist! Perfect for coding sessions 🎧", 
+        hoursAgo(1));
+    
+    Post* post2 = createPost(diana->userID, diana->username, 
+        "Golden hour is the best time for photography! Just captured an amazing sunset 🌅", 
+        hoursAgo(2));
+    
+    Post* post3 = createPost(charlie->userID, charlie->username, 
+        "Travel tip: Always pack light! You'll thank yourself later ✈️", 
+        hoursAgo(3));
+    
+    Post* post4 = createPost(bob->userID, bob->username, 
+        "Any gamers here? Just finished an epic raid! Looking for team members 🎮", 
+        hoursAgo(4));
+    
+    Post* post5 = createPost(alice->userID, alice->username, 
+        "Learning C++ GUI with ImGui is actually really fun! Who knew? 💻", 
+        hoursAgo(5));
+    
+    Post* post6 = createPost(eve->userID, eve->username, 
+        "Music recommendation: Check out some synthwave for productivity!", 
+        hoursAgo(6));
+    
+    Post* post7 = createPost(diana->userID, diana->username, 
+        "Photography tip: Rule of thirds changes everything! 📸", 
+        hoursAgo(8));
+    
+    Post* post8 = createPost(charlie->userID, charlie->username, 
+        "Exploring the mountains today! The view is absolutely breathtaking 🏔️", 
+        hoursAgo(10));
+    
+    Post* post9 = createPost(bob->userID, bob->username, 
+        "Just finished a new game level! That boss fight was intense! 🔥", 
+        hoursAgo(12));
+    
+    Post* post10 = createPost(alice->userID, alice->username, 
+        "Hello everyone! This is my first post on this platform. Excited to be here! 👋", 
+        hoursAgo(15));
+    
+    // Add some likes to posts
+    if (post1) post1->addLike();
+    if (post2) { post2->addLike(); post2->addLike(); }
+    if (post3) post3->addLike();
+    if (post4) { post4->addLike(); post4->addLike(); post4->addLike(); }
+    if (post5) { post5->addLike(); post5->addLike(); }
+    if (post7) post7->addLike();
+    if (post10) { post10->addLike(); post10->addLike(); post10->addLike(); post10->addLike(); }
+    
+    // Add some comments
+    if (post10) {
+        post10->addComment(bob->userID, bob->username, 
+            "Welcome Alice! Glad to have you here!", hoursAgo(14));
+        post10->addComment(charlie->userID, charlie->username, 
+            "Hey Alice! Looking forward to your posts!", hoursAgo(14));
+        post10->addComment(eve->userID, eve->username, 
+            "Welcome to the community! 🎉", hoursAgo(13));
+    }
+    
+    if (post5) {
+        post5->addComment(bob->userID, bob->username, 
+            "ImGui is awesome! What are you building?", hoursAgo(4));
+    }
+    
+    if (post4) {
+        post4->addComment(charlie->userID, charlie->username, 
+            "I'm interested! What game?", hoursAgo(3));
+    }
+    
+    if (post2) {
+        post2->addComment(eve->userID, eve->username, 
+            "Beautiful shot! What camera do you use?", hoursAgo(1));
+    }
+}

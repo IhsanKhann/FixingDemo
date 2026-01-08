@@ -210,6 +210,7 @@ void UI::render() {
 }
 
 void UI::renderLoginScreen() {
+
     float windowWidth = ImGui::GetWindowWidth();
     float contentWidth = 350;
     
@@ -938,4 +939,53 @@ void UI::renderPostDetailScreen() {
     
     ImGui::Dummy(ImVec2(0, 30));
     ImGui::EndChild();
+}
+
+// ==================== DUMMY DATA INITIALIZATION ====================
+void UI::initializeDummyData() {
+    // Generate dummy users and their follower relationships
+    userDatabase->generateDummyUsers();
+    
+    // Generate dummy posts with likes and comments
+    postDatabase->generateDummyPosts(userDatabase);
+    
+    // Generate some notifications for alice (the default test user)
+    User* alice = userDatabase->searchByUsername("alice");
+    if (alice) {
+        User* bob = userDatabase->searchByUsername("bob");
+        User* charlie = userDatabase->searchByUsername("charlie");
+        User* eve = userDatabase->searchByUsername("eve");
+        
+        Timestamp now = getCurrentTimestamp();
+        
+        // Helper for minutes ago
+        auto minutesAgo = [&](int minutes) {
+            Timestamp ts = now;
+            ts.minute -= minutes;
+            if (ts.minute < 0) {
+                ts.minute += 60;
+                ts.hour -= 1;
+            }
+            return ts;
+        };
+        
+        if (bob) {
+            notifications->addNotification(LIKE, bob->userID, bob->username, 1005,
+                "bob liked your post", minutesAgo(30));
+            notifications->addNotification(COMMENT, bob->userID, bob->username, 1005,
+                "bob commented on your post", minutesAgo(25));
+        }
+        
+        if (charlie) {
+            notifications->addNotification(FOLLOW, charlie->userID, charlie->username, 0,
+                "charlie followed you", minutesAgo(45));
+            notifications->addNotification(COMMENT, charlie->userID, charlie->username, 1010,
+                "charlie commented on your post", minutesAgo(20));
+        }
+        
+        if (eve) {
+            notifications->addNotification(LIKE, eve->userID, eve->username, 1010,
+                "eve liked your post", minutesAgo(60));
+        }
+    }
 }

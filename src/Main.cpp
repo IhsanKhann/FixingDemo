@@ -43,6 +43,9 @@ int main() {
     History history;
     
     UI ui(&userDB, &postDB, &notifQueue, &history);
+    
+    // Initialize dummy data
+    ui.initializeDummyData();
 
     // Main loop
     while (!glfwWindowShouldClose(window)) {

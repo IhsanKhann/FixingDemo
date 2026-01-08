@@ -262,6 +262,7 @@ public:
     User* searchByID(int userID);
     User* searchByUsername(const string& username);
     void getAllUsers(User** arr, int& count);
+    void generateDummyUsers();
 };
 
 // ==================== POST DATABASE CLASS ====================
@@ -281,6 +282,8 @@ public:
     Post* findPost(int postID);
     Post* getHead() { return head; }
     int getNextCommentID() { return nextCommentID++; }
+    void generateDummyPosts(UserDatabase* userDB);  // ADD THIS LINE
+    void clearAll();
 };
 
 // ==================== UI CLASS ====================
@@ -328,6 +331,8 @@ public:
     void renderSearchScreen();
     void renderCreatePostScreen();
     void renderPostDetailScreen();
+    void initializeDummyData();  // ADD THIS LINE
+    void populateDummyFeed();   // <<< declaration fixes the error
 };
 
 // ==================== UTILITY FUNCTIONS ====================
