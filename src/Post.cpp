@@ -215,3 +215,137 @@ void PostDatabase::generateDummyPosts(UserDatabase* userDB) {
             "Beautiful shot! What camera do you use?", hoursAgo(1));
     }
 }
+
+// ==================== FILE HANDLING ====================
+void PostDatabase::saveToFile(const string& filename) {
+    ofstream file(filename);
+    if (!file.is_open()) {
+        cerr << "Error: Could not open " << filename << " for writing" << endl;
+        return;
+    }
+    
+    int postCount = 0;
+    Post* current = head;
+    while (current) {
+        postCount++;
+        current = current->next;
+    }
+    
+    file << postCount << endl; // Save total number of posts
+    
+    current = head;
+    while (current) {
+        file << current->postID << endl;
+        file << current->userID << endl;
+        file << current->username << endl;
+        file << current->content << endl;
+        file << current->timestamp.year << " " << current->timestamp.month << " " 
+             << current->timestamp.day << " " << current->timestamp.hour << " "
+             << current->timestamp.minute << " " << current->timestamp.second << endl;
+        file << current->likes << endl;
+        file << current->commentCount << endl;
+        
+        // Save comments
+        Comment* comment = current->comments;
+        while (comment) {
+            file << "COMMENT" << endl;
+            file << comment->commentID << endl;
+            file << comment->userID << endl;
+            file << comment->username << endl;
+            file << comment->content << endl;
+            file << comment->timestamp.year << " " << comment->timestamp.month << " "
+                 << comment->timestamp.day << " " << comment->timestamp.hour << " "
+                 << comment->timestamp.minute << " " << comment->timestamp.second << endl;
+            comment = comment->next;
+        }
+        file << "END_COMMENTS" << endl;
+        
+        current = current->next;
+    }
+    
+    file.close();
+    cout << "Saved " << postCount << " posts to " << filename << endl;
+}
+
+void PostDatabase::loadFromFile(const string& filename) {
+    ifstream file(filename);
+    if (!file.is_open()) {
+        cout << "No existing posts file found. Starting fresh." << endl;
+        return;
+    }
+    
+    int postCount;
+    file >> postCount;
+    file.ignore();
+    
+    for (int i = 0; i < postCount; i++) {
+        int postID, userID, likes, commentCount;
+        string username, content, line;
+        Timestamp ts;
+        
+        file >> postID;
+        file.ignore();
+        file >> userID;
+        file.ignore();
+        getline(file, username);
+        getline(file, content);
+        file >> ts.year >> ts.month >> ts.day >> ts.hour >> ts.minute >> ts.second;
+        file >> likes >> commentCount;
+        file.ignore();
+        
+        // Create post directly
+        Post* post = new Post(postID, userID, username, content, ts);
+        post->likes = likes;
+        
+        // Insert at tail to maintain order
+        if (!head) {
+            head = tail = post;
+        } else {
+            tail->next = post;
+            post->prev = tail;
+            tail = post;
+        }
+        
+        // Update nextPostID
+        if (postID >= nextPostID) {
+            nextPostID = postID + 1;
+        }
+        
+        // Load comments
+        while (true) {
+            getline(file, line);
+            if (line == "END_COMMENTS") break;
+            if (line == "COMMENT") {
+                int commentID, commentUserID;
+                string commentUsername, commentContent;
+                Timestamp commentTS;
+                
+                file >> commentID;
+                file.ignore();
+                file >> commentUserID;
+                file.ignore();
+                getline(file, commentUsername);
+                getline(file, commentContent);
+                file >> commentTS.year >> commentTS.month >> commentTS.day 
+                     >> commentTS.hour >> commentTS.minute >> commentTS.second;
+                file.ignore();
+                
+                post->addComment(commentUserID, commentUsername, commentContent, commentTS);
+            }
+        }
+    }
+    
+    file.close();
+    cout << "Loaded " << postCount << " posts from " << filename << endl;
+}
+
+void PostDatabase::clearAll() {
+    Post* current = head;
+    while (current) {
+        Post* temp = current;
+        current = current->next;
+        delete temp;
+    }
+    head = tail = nullptr;
+    nextPostID = 1001;
+}

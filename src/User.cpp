@@ -250,3 +250,114 @@ void UserDatabase::generateDummyUsers() {
     eve->addFollowing(diana->userID);
     diana->addFollower(eve->userID);
 }
+
+// ==================== FILE HANDLING ====================
+void UserDatabase::saveToFile(const string& filename) {
+    ofstream file(filename);
+    if (!file.is_open()) {
+        cerr << "Error: Could not open " << filename << " for writing" << endl;
+        return;
+    }
+    
+    User* users[100];
+    int count = 0;
+    getAllUsers(users, count);
+    
+    file << count << endl; // Save total number of users
+    
+    for (int i = 0; i < count; i++) {
+        User* u = users[i];
+        file << u->userID << endl;
+        file << u->username << endl;
+        file << u->password << endl;
+        file << u->bio << endl;
+        file << u->followerCount << endl;
+        file << u->followingCount << endl;
+    }
+    
+    file.close();
+    cout << "Saved " << count << " users to " << filename << endl;
+}
+
+void UserDatabase::loadFromFile(const string& filename) {
+    ifstream file(filename);
+    if (!file.is_open()) {
+        cout << "No existing users file found. Starting fresh." << endl;
+        return;
+    }
+    
+    int count;
+    file >> count;
+    file.ignore(); // Skip newline
+    
+    for (int i = 0; i < count; i++) {
+        int userID;
+        string username, password, bio;
+        int followerCount, followingCount;
+        
+        file >> userID;
+        file.ignore();
+        getline(file, username);
+        getline(file, password);
+        getline(file, bio);
+        file >> followerCount >> followingCount;
+        file.ignore();
+        
+        // Create user directly with ID
+        User* newUser = new User(userID, username, password, bio);
+        root = insertNode(root, newUser);
+        
+        // Update nextUserID
+        if (userID >= nextUserID) {
+            nextUserID = userID + 1;
+        }
+    }
+    
+    file.close();
+    cout << "Loaded " << count << " users from " << filename << endl;
+}
+
+void UserDatabase::saveConnectionsToFile(const string& filename) {
+    ofstream file(filename);
+    if (!file.is_open()) {
+        cerr << "Error: Could not open " << filename << " for writing" << endl;
+        return;
+    }
+    
+    User* users[100];
+    int count = 0;
+    getAllUsers(users, count);
+    
+    // Save following relationships
+    for (int i = 0; i < count; i++) {
+        User* u = users[i];
+        for (int j = 0; j < u->followingCount; j++) {
+            file << u->userID << " " << u->followingList[j] << endl;
+        }
+    }
+    
+    file.close();
+    cout << "Saved connections to " << filename << endl;
+}
+
+void UserDatabase::loadConnectionsFromFile(const string& filename) {
+    ifstream file(filename);
+    if (!file.is_open()) {
+        cout << "No existing connections file found." << endl;
+        return;
+    }
+    
+    int userID, followingID;
+    while (file >> userID >> followingID) {
+        User* user = searchByID(userID);
+        User* target = searchByID(followingID);
+        
+        if (user && target) {
+            user->addFollowing(followingID);
+            target->addFollower(userID);
+        }
+    }
+    
+    file.close();
+    cout << "Loaded connections from " << filename << endl;
+}

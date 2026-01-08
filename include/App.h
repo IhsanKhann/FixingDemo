@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <fstream>
 #include <sstream>
+#include <chrono>  // ADD THIS LINE
 
 // ==================== IMGUI ====================
 #include "../imgui/imgui.h"
@@ -263,6 +264,12 @@ public:
     User* searchByUsername(const string& username);
     void getAllUsers(User** arr, int& count);
     void generateDummyUsers();
+    
+    // ADD THESE FILE HANDLING METHODS:
+    void saveToFile(const string& filename);
+    void loadFromFile(const string& filename);
+    void saveConnectionsToFile(const string& filename);
+    void loadConnectionsFromFile(const string& filename);
 };
 
 // ==================== POST DATABASE CLASS ====================
@@ -282,8 +289,12 @@ public:
     Post* findPost(int postID);
     Post* getHead() { return head; }
     int getNextCommentID() { return nextCommentID++; }
-    void generateDummyPosts(UserDatabase* userDB);  // ADD THIS LINE
+    void generateDummyPosts(UserDatabase* userDB);
     void clearAll();
+    
+    // ADD THESE FILE HANDLING METHODS:
+    void saveToFile(const string& filename);
+    void loadFromFile(const string& filename);
 };
 
 // ==================== UI CLASS ====================

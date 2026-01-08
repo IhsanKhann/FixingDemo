@@ -55,7 +55,6 @@ $RECYCLE.BIN/
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
-Makefile
 
 # =========================
 # Logs, temporary, and backup files

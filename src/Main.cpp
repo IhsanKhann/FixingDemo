@@ -42,14 +42,51 @@ int main() {
     NotificationQueue notifQueue;
     History history;
     
+    // Load existing data from files
+    cout << "Loading data from files..." << endl;
+    userDB.loadFromFile("users.txt");
+    userDB.loadConnectionsFromFile("connections.txt");
+    postDB.loadFromFile("posts.txt");
+    
+    // If no data exists, generate dummy data
+    User* testUser = userDB.searchByUsername("alice");
+    if (!testUser) {
+        cout << "No existing data found. Generating dummy data..." << endl;
+        userDB.generateDummyUsers();
+        postDB.generateDummyPosts(&userDB);
+        
+        // Save dummy data immediately
+        userDB.saveToFile("users.txt");
+        userDB.saveConnectionsToFile("connections.txt");
+        postDB.saveToFile("posts.txt");
+    }
+    
     UI ui(&userDB, &postDB, &notifQueue, &history);
     
-    // Initialize dummy data
-    ui.initializeDummyData();
+    // Initialize notifications for alice if exists
+    User* alice = userDB.searchByUsername("alice");
+    if (alice) {
+        ui.initializeDummyData(); // This only adds notifications
+    }
+
+    // Auto-save timer
+    auto lastSaveTime = std::chrono::steady_clock::now();
+    const int AUTOSAVE_INTERVAL_SECONDS = 30; // Save every 30 seconds
 
     // Main loop
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
+
+        // Auto-save periodically
+        auto currentTime = std::chrono::steady_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(currentTime - lastSaveTime).count();
+        if (elapsed >= AUTOSAVE_INTERVAL_SECONDS) {
+            cout << "Auto-saving data..." << endl;
+            userDB.saveToFile("users.txt");
+            userDB.saveConnectionsToFile("connections.txt");
+            postDB.saveToFile("posts.txt");
+            lastSaveTime = currentTime;
+        }
 
         // Start ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
@@ -70,6 +107,12 @@ int main() {
 
         glfwSwapBuffers(window);
     }
+
+    // Final save before exit
+    cout << "Saving data before exit..." << endl;
+    userDB.saveToFile("users.txt");
+    userDB.saveConnectionsToFile("connections.txt");
+    postDB.saveToFile("posts.txt");
 
     // Cleanup
     ImGui_ImplOpenGL3_Shutdown();

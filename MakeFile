@@ -1,0 +1,96 @@
+# ========================
+# Compiler
+# ========================
+CXX = g++
+
+CXXFLAGS = -std=c++17 -Wall -Wextra -O2 \
+	-Iinclude \
+	-Iimgui \
+	-Iimgui/backends \
+	-ID:/glfw-3.4/glfw-3.4/include \
+	-DGLFW_STATIC
+
+# ========================
+# GLFW (Windows MinGW)
+# ========================
+# Make sure libglfw3.a exists in this folder
+GLFW_LIB_DIR = D:/glfw-3.4/glfw-3.4/build/src
+LDFLAGS = -L$(GLFW_LIB_DIR) -lglfw3 -lopengl32 -lgdi32
+
+# ========================
+# Directories
+# ========================
+SRC_DIR = src
+OBJ_DIR = obj
+BIN_DIR = bin
+IMGUI_DIR = imgui
+IMGUI_BACKENDS = imgui/backends
+
+# ========================
+# Target
+# ========================
+TARGET = $(BIN_DIR)/app.exe
+
+# ========================
+# Source files
+# ========================
+SRC_CPP = $(wildcard $(SRC_DIR)/*.cpp)
+
+IMGUI_CPP = \
+	imgui/imgui.cpp \
+	imgui/imgui_draw.cpp \
+	imgui/imgui_tables.cpp \
+	imgui/imgui_widgets.cpp
+
+IMGUI_BACKEND_CPP = \
+	imgui/backends/imgui_impl_glfw.cpp \
+	imgui/backends/imgui_impl_opengl3.cpp
+
+# ========================
+# Object files
+# ========================
+SRC_OBJ = $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRC_CPP))
+IMGUI_OBJ = $(patsubst imgui/%.cpp,$(OBJ_DIR)/imgui_%.o,$(IMGUI_CPP))
+IMGUI_BACKEND_OBJ = $(patsubst imgui/backends/%.cpp,$(OBJ_DIR)/imgui_backends/%.o,$(IMGUI_BACKEND_CPP))
+
+OBJECTS = $(SRC_OBJ) $(IMGUI_OBJ) $(IMGUI_BACKEND_OBJ)
+
+# ========================
+# Default target
+# ========================
+all: dirs $(TARGET)
+
+# ========================
+# Link executable
+# ========================
+$(TARGET): $(OBJECTS)
+	$(CXX) $(OBJECTS) -o $@ $(LDFLAGS)
+
+# ========================
+# Compile rules
+# ========================
+obj/%.o: $(SRC_DIR)/%.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+obj/imgui_%.o: imgui/%.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+obj/imgui_backends/%.o: imgui/backends/%.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+# ========================
+# Create directories
+# ========================
+dirs:
+	if not exist $(BIN_DIR) mkdir $(BIN_DIR)
+	if not exist $(OBJ_DIR) mkdir $(OBJ_DIR)
+	if not exist $(OBJ_DIR)\imgui_backends mkdir $(OBJ_DIR)\imgui_backends
+
+# ========================
+# Clean
+# ========================
+clean:
+	if exist $(OBJ_DIR) rmdir /s /q $(OBJ_DIR)
+	if exist $(BIN_DIR) rmdir /s /q $(BIN_DIR)
+
+.PHONY: all clean dirs
